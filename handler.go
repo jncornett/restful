@@ -132,3 +132,11 @@ func (h Handler) handleDelete(id ID, w http.ResponseWriter, r *http.Request) {
 	}
 	// FIXME is there a response to this?
 }
+
+// NewJSONHandler creates a new RESTful JSON handler.
+func NewJSONHandler(s Store) *Handler {
+	return &Handler{
+		Codec: JSONCodec,
+		Store: s,
+	}
+}

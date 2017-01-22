@@ -6,12 +6,15 @@ import (
 	"strings"
 )
 
+// NewObjectFunc is a function type which returns a new object for deserialization into.
+type NewObjectFunc func() interface{}
+
 // Client represents a RESTful HTTP client.
 type Client struct {
-	URL string
 	ClientCodec
-	NewFunc     func() interface{}
-	NewListFunc func() interface{}
+	URL         string
+	NewFunc     NewObjectFunc
+	NewListFunc NewObjectFunc
 }
 
 // Get retrieves the record with id id from an endpoint.
@@ -85,4 +88,13 @@ func (c Client) NewList() interface{} {
 
 func (c Client) getEndpoint(id ID) string {
 	return strings.Join([]string{c.URL, string(id)}, "/")
+}
+
+// NewJSONClient creates a new RESTful JSON client.
+func NewJSONClient(url string, newFunc, newListFunc NewObjectFunc) *Client {
+	return &Client{
+		ClientCodec: JSONCodec,
+		NewFunc:     newFunc,
+		NewListFunc: newListFunc,
+	}
 }
