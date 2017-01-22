@@ -28,10 +28,12 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			h.handleGet(ID(path), w, r)
 		}
-	case "PUT":
-		h.handlePutWithID(ID(path), w, r)
-	case "POST":
-		h.handlePut(w, r)
+	case "PUT", "PATCH", "POST":
+		if path == "" {
+			h.handlePut(w, r)
+		} else {
+			h.handleUpdate(ID(path), w, r)
+		}
 	case "DELETE":
 		h.handleDelete(ID(path), w, r)
 	}
@@ -102,7 +104,7 @@ func (h Handler) handlePut(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h Handler) handlePutWithID(id ID, w http.ResponseWriter, r *http.Request) {
+func (h Handler) handleUpdate(id ID, w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
 		// FIXME better error handling
 		http.Error(w, "", http.StatusBadRequest)
@@ -116,7 +118,7 @@ func (h Handler) handlePutWithID(id ID, w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.PutWithId(id, item)
+	err = h.Update(id, item)
 	if err != nil {
 		// FIXME better error handling
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -56,7 +56,7 @@ func (c Client) Put(v interface{}) (ID, error) {
 }
 
 // PutWithID updates a record with a given id at an endpoint.
-func (c Client) PutWithID(id ID, v interface{}) error {
+func (c Client) Update(id ID, v interface{}) error {
 	var b bytes.Buffer
 	err := c.Encode(&b, v)
 	if err != nil {
@@ -98,3 +98,5 @@ func NewJSONClient(url string, newFunc, newListFunc NewObjectFunc) *Client {
 		NewListFunc: newListFunc,
 	}
 }
+
+var _ ClientStore = &Client{}
