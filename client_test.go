@@ -8,7 +8,7 @@ import (
 )
 
 // Example usage of the default JSON client
-func ExampleClient_JSONClient() {
+func ExampleClient() {
 	client := restful.NewJSONClient(
 		"http://www.example.com/api",
 		// Default constructor for an anonymous struct
