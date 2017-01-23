@@ -2,9 +2,14 @@ package restful
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 	"strings"
 )
+
+type HTTPClient interface {
+	Do(*http.Request) (*http.Response, error)
+}
 
 // NewObjectFunc is a function type which returns a new object for deserialization into.
 type NewObjectFunc func() interface{}
@@ -12,6 +17,7 @@ type NewObjectFunc func() interface{}
 // Client represents a RESTful HTTP client.
 type Client struct {
 	ClientCodec
+	HTTPClient
 	URL         string
 	NewFunc     NewObjectFunc
 	NewListFunc NewObjectFunc
@@ -19,21 +25,26 @@ type Client struct {
 
 // Get retrieves the record with id id from an endpoint.
 func (c Client) Get(id ID) (interface{}, error) {
-	resp, err := http.Get(c.getEndpoint(id))
+	resp, err := c.do("GET", c.getEndpoint(id), nil)
 	if err != nil {
 		return nil, err
 	}
+	if resp == nil || resp.Body == nil {
+		return nil, nil // FIXME no response body from server?
+	}
 	item := c.New()
-	// FIXME need to check if resp.Body is nil?
 	err = c.Decode(resp.Body, item)
 	return item, err
 }
 
 // GetAll retrieves all record from an endpoint.
 func (c Client) GetAll() (interface{}, error) {
-	resp, err := http.Get(c.URL)
+	resp, err := c.do("GET", c.URL, nil)
 	if err != nil {
 		return nil, err
+	}
+	if resp == nil || resp.Body == nil {
+		return nil, nil // FIXME no response body from server?
 	}
 	list := c.NewList()
 	// FIXME need to check if resp.Body is nil?
@@ -42,17 +53,22 @@ func (c Client) GetAll() (interface{}, error) {
 }
 
 // Put creates a record at an endpoint and returns the resource id.
-func (c Client) Put(v interface{}) (ID, error) {
+func (c Client) Put(v interface{}) (interface{}, error) {
 	var b bytes.Buffer
 	err := c.Encode(&b, v)
 	if err != nil {
 		return "", err
 	}
-	resp, err := http.Post(c.URL, c.GetBodyType(), &b)
-	// FIXME need to check if resp.Body is nil?
-	var id ID // FIXME is this the right response
-	err = c.Decode(resp.Body, &id)
-	return id, err
+	resp, err := c.do("POST", c.URL, &b)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || resp.Body == nil {
+		return nil, nil // FIXME no response body from server?
+	}
+	item := c.New()
+	err = c.Decode(resp.Body, item)
+	return item, err
 }
 
 // PutWithID updates a record with a given id at an endpoint.
@@ -62,17 +78,13 @@ func (c Client) Update(id ID, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	_, err = http.Post(c.getEndpoint(id), c.GetBodyType(), &b)
+	_, err = c.do("POST", c.getEndpoint(id), &b)
 	return err
 }
 
 // Delete deletes a record with a given id at an endpoint.
 func (c Client) Delete(id ID) error {
-	req, err := http.NewRequest("DELETE", c.getEndpoint(id), nil)
-	if err != nil {
-		return err
-	}
-	_, err = http.DefaultClient.Do(req)
+	_, err := c.do("DELETE", c.getEndpoint(id), nil)
 	return err
 }
 
@@ -86,6 +98,17 @@ func (c Client) NewList() interface{} {
 	return c.NewListFunc()
 }
 
+func (c Client) do(method, urlStr string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, urlStr, body)
+	if err != nil {
+		return nil, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", c.GetBodyType())
+	}
+	return c.Do(req)
+}
+
 func (c Client) getEndpoint(id ID) string {
 	return strings.Join([]string{c.URL, string(id)}, "/")
 }
@@ -94,6 +117,7 @@ func (c Client) getEndpoint(id ID) string {
 func NewJSONClient(url string, newFunc, newListFunc NewObjectFunc) *Client {
 	return &Client{
 		ClientCodec: JSONCodec,
+		HTTPClient:  http.DefaultClient,
 		NewFunc:     newFunc,
 		NewListFunc: newListFunc,
 	}

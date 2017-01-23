@@ -36,6 +36,9 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	case "DELETE":
 		h.handleDelete(ID(path), w, r)
+	default:
+		// FIXME better error handling
+		http.Error(w, "", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -57,8 +60,11 @@ func (h Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 func (h Handler) handleGet(id ID, w http.ResponseWriter, r *http.Request) {
 	item, err := h.Get(id)
 	if err != nil {
-		// FIXME better error handling
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		code := http.StatusInternalServerError
+		if _, ok := err.(ErrMissing); ok {
+			code = http.StatusNotFound
+		}
+		http.Error(w, err.Error(), code)
 		return
 	}
 	if item == nil {
@@ -88,15 +94,13 @@ func (h Handler) handlePut(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	id, err := h.Put(item)
+	item, err = h.Put(item)
 	if err != nil {
 		// FIXME better error handling
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// FIXME how to include "id" in model?
-	// FIXME should respond with {"id": <id>}
-	err = h.Encode(w, id)
+	err = h.Encode(w, item)
 	if err != nil {
 		// FIXME better error handling
 		// FIXME do not encoding raw decoding error
@@ -120,19 +124,23 @@ func (h Handler) handleUpdate(id ID, w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.Update(id, item)
 	if err != nil {
-		// FIXME better error handling
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		code := http.StatusInternalServerError
+		if _, ok := err.(ErrMissing); ok {
+			code = http.StatusNotFound
+		}
+		http.Error(w, err.Error(), code)
 	}
-	// FIXME appropriate response?
 }
 
 func (h Handler) handleDelete(id ID, w http.ResponseWriter, r *http.Request) {
 	err := h.Delete(id)
 	if err != nil {
-		// FIXME better error handling
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		code := http.StatusInternalServerError
+		if _, ok := err.(ErrMissing); ok {
+			code = http.StatusNotFound
+		}
+		http.Error(w, err.Error(), code)
 	}
-	// FIXME is there a response to this?
 }
 
 // NewJSONHandler creates a new RESTful JSON handler.
