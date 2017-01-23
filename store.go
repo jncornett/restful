@@ -1,3 +1,4 @@
+// Package restful provides a RESTful HTTP client and server implementation.
 package restful
 
 import "fmt"
