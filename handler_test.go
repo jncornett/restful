@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -319,4 +320,12 @@ func TestHandler_DeleteMissing(t *testing.T) {
 			http.StatusNotFound, resp.StatusCode,
 		)
 	}
+}
+
+// Example implementation of a Handler
+func ExampleHandler() {
+	handler := restful.NewJSONHandler(nil) // FIXME replace nil with a default Store impl
+	http.Handle("/api", http.StripPrefix("/api", handler))
+	http.Handle("/api/", http.StripPrefix("/api", handler))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
