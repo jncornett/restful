@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -64,7 +63,6 @@ func (c Client) Get(id ID) (interface{}, error) {
 
 // GetAll retrieves all record from an endpoint.
 func (c Client) GetAll() (interface{}, error) {
-	log.Println("GetAll()")
 	resp, err := c.do("GET", c.URL, nil)
 	if err != nil {
 		return nil, err
@@ -149,7 +147,6 @@ func (c Client) do(
 	method, urlStr string,
 	body io.Reader,
 ) (*http.Response, error) {
-	log.Printf("do(%v, %v, %v)", method, urlStr, body)
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err
