@@ -15,7 +15,7 @@ func (e ErrMissing) Error() string {
 // ID represents a record ID in a Store
 type ID string
 
-// Store is presents an interface to a data store.
+// Store presents an interface to a data store.
 type Store interface {
 	Put(interface{}) (interface{}, error)
 	Update(ID, interface{}) error
