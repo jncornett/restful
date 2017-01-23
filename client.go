@@ -2,11 +2,29 @@ package restful
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 )
 
+// ErrNoResponseBody is the error returned when there is no response body.
+var ErrNoResponseBody = errors.New("no response body from server")
+
+// ErrStatus represents a status code error.
+// It is returned when a client method gets a status code other than 404 or 200.
+type ErrStatus struct {
+	Status     string
+	StatusCode int
+}
+
+func (e ErrStatus) Error() string {
+	return fmt.Sprintf("%v %v", e.StatusCode, e.Status)
+}
+
+// HTTPClient is an interface that wraps the Do method.
+// DefaultClient in the "net/http" implements the HTTPClient interface.
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
@@ -29,8 +47,13 @@ func (c Client) Get(id ID) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp == nil || resp.Body == nil {
-		return nil, nil // FIXME no response body from server?
+	if resp.Body == nil {
+		return nil, ErrNoResponseBody
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, ErrMissing{id}
+	} else if resp.StatusCode != http.StatusOK {
+		return nil, ErrStatus{Status: resp.Status, StatusCode: resp.StatusCode}
 	}
 	item := c.New()
 	err = c.Decode(resp.Body, item)
@@ -43,11 +66,13 @@ func (c Client) GetAll() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp == nil || resp.Body == nil {
-		return nil, nil // FIXME no response body from server?
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrStatus{Status: resp.Status, StatusCode: resp.StatusCode}
+	}
+	if resp.Body == nil {
+		return nil, ErrNoResponseBody // FIXME return empty list?
 	}
 	list := c.NewList()
-	// FIXME need to check if resp.Body is nil?
 	err = c.Decode(resp.Body, list)
 	return list, err
 }
@@ -63,29 +88,48 @@ func (c Client) Put(v interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp == nil || resp.Body == nil {
-		return nil, nil // FIXME no response body from server?
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrStatus{Status: resp.Status, StatusCode: resp.StatusCode}
+	}
+	if resp.Body == nil {
+		return nil, ErrNoResponseBody
 	}
 	item := c.New()
 	err = c.Decode(resp.Body, item)
 	return item, err
 }
 
-// PutWithID updates a record with a given id at an endpoint.
+// Update updates a record with a given id at an endpoint.
 func (c Client) Update(id ID, v interface{}) error {
 	var b bytes.Buffer
 	err := c.Encode(&b, v)
 	if err != nil {
 		return err
 	}
-	_, err = c.do("POST", c.getEndpoint(id), &b)
-	return err
+	resp, err := c.do("POST", c.getEndpoint(id), &b)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return ErrMissing{id}
+	} else if resp.StatusCode != http.StatusOK {
+		return ErrStatus{Status: resp.Status, StatusCode: resp.StatusCode}
+	}
+	return nil
 }
 
 // Delete deletes a record with a given id at an endpoint.
 func (c Client) Delete(id ID) error {
-	_, err := c.do("DELETE", c.getEndpoint(id), nil)
-	return err
+	resp, err := c.do("DELETE", c.getEndpoint(id), nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return ErrMissing{id}
+	} else if resp.StatusCode != http.StatusOK {
+		return ErrStatus{Status: resp.Status, StatusCode: resp.StatusCode}
+	}
+	return nil
 }
 
 // New allocates and returns an empty record for deserialization.
