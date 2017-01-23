@@ -17,8 +17,8 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.Store == nil {
 		return
 	}
-	// the trim is so that we don't have to mount the handler at "/<api>" and "/<api>/"
-	// when using the default mux
+	// the trim is so that we don't have to mount the handler at
+	// both "/<api>" and "/<api>/" when using the default mux
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	// TODO PATCH support?
 	switch r.Method {

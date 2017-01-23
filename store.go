@@ -2,7 +2,8 @@ package restful
 
 import "fmt"
 
-// ErrMissing represents a missing ID error for get/update/delete operations on a Store.
+// ErrMissing represents a missing ID error for get/update/delete operations
+// on a Store.
 type ErrMissing struct {
 	ID
 }

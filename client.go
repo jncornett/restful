@@ -30,7 +30,8 @@ type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// NewObjectFunc is a function type which returns a new object for deserialization into.
+// NewObjectFunc is a function type which returns a new object for
+// deserialization into.
 type NewObjectFunc func() interface{}
 
 // Client represents a RESTful HTTP client.
@@ -144,7 +145,10 @@ func (c Client) NewList() interface{} {
 	return c.NewListFunc()
 }
 
-func (c Client) do(method, urlStr string, body io.Reader) (*http.Response, error) {
+func (c Client) do(
+	method, urlStr string,
+	body io.Reader,
+) (*http.Response, error) {
 	log.Printf("do(%v, %v, %v)", method, urlStr, body)
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {

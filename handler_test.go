@@ -74,14 +74,6 @@ func newTestServer(s restful.Store) *httptest.Server {
 	return httptest.NewServer(restful.NewJSONHandler(s))
 }
 
-func newTestClient(url string) *restful.Client {
-	return restful.NewJSONClient(
-		url,
-		func() interface{} { return &dummyObject{} },
-		func() interface{} { return []dummyObject{} },
-	)
-}
-
 func TestHandler_Get(t *testing.T) {
 	var (
 		testID  = restful.ID("a")
@@ -95,7 +87,10 @@ func TestHandler_Get(t *testing.T) {
 		t.Fatal(err)
 	}
 	if http.StatusOK != resp.StatusCode {
-		t.Errorf("expected status to be %v, got %v", http.StatusNotFound, resp.StatusCode)
+		t.Errorf(
+			"expected status to be %v, got %v",
+			http.StatusNotFound, resp.StatusCode,
+		)
 	}
 	if resp.Body == nil {
 		t.Fatal("expected non nil response body")
@@ -119,7 +114,10 @@ func TestHandler_GetMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if http.StatusNotFound != resp.StatusCode {
-		t.Errorf("expected status to be %v, got %v", http.StatusNotFound, resp.StatusCode)
+		t.Errorf(
+			"expected status to be %v, got %v",
+			http.StatusNotFound, resp.StatusCode,
+		)
 	}
 }
 
@@ -135,7 +133,10 @@ func TestHandler_GetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	if http.StatusOK != resp.StatusCode {
-		t.Errorf("expected status to be %v, got %v", http.StatusNotFound, resp.StatusCode)
+		t.Errorf(
+			"expected status to be %v, got %v",
+			http.StatusNotFound, resp.StatusCode,
+		)
 	}
 	if resp.Body == nil {
 		t.Fatal("expected non nil response body")
@@ -150,7 +151,10 @@ func TestHandler_GetAll(t *testing.T) {
 	}
 	for i, obj := range list {
 		if !reflect.DeepEqual(store[obj.ID], obj) {
-			t.Errorf("(#%v) expected obj to be %v, got %v", i, store[obj.ID], obj)
+			t.Errorf(
+				"(#%v) expected obj to be %v, got %v",
+				i, store[obj.ID], obj,
+			)
 		}
 	}
 }
@@ -190,7 +194,10 @@ func TestHandler_Put(t *testing.T) {
 				t.Errorf("expected o to be %v, got %v", object, o)
 			}
 			if !reflect.DeepEqual(object, store[object.ID]) {
-				t.Errorf("expected store[%v] to be %v, got %v", object.ID, object, store[object.ID])
+				t.Errorf(
+					"expected store[%v] to be %v, got %v",
+					object.ID, object, store[object.ID],
+				)
 			}
 		})
 	}
@@ -209,7 +216,11 @@ func TestHandler_Update(t *testing.T) {
 			if err := json.NewEncoder(&b).Encode(&newObj); err != nil {
 				t.Fatal(err)
 			}
-			req, err := http.NewRequest(method, server.URL+"/"+string(newObj.ID), &b)
+			req, err := http.NewRequest(
+				method,
+				server.URL+"/"+string(newObj.ID),
+				&b,
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -219,10 +230,16 @@ func TestHandler_Update(t *testing.T) {
 				t.Fatal(err)
 			}
 			if http.StatusOK != resp.StatusCode {
-				t.Error("expected status code to be %v, got %v", http.StatusOK, resp.StatusCode)
+				t.Error(
+					"expected status code to be %v, got %v",
+					http.StatusOK, resp.StatusCode,
+				)
 			}
 			if !reflect.DeepEqual(newObj, store[newObj.ID]) {
-				t.Errorf("expected store[%v] to be %v, got %v", newObj.ID, newObj, store[newObj.ID])
+				t.Errorf(
+					"expected store[%v] to be %v, got %v",
+					newObj.ID, newObj, store[newObj.ID],
+				)
 			}
 		})
 	}
@@ -240,7 +257,11 @@ func TestHandler_UpdateMissing(t *testing.T) {
 			if err := json.NewEncoder(&b).Encode(&newObj); err != nil {
 				t.Fatal(err)
 			}
-			req, err := http.NewRequest(method, server.URL+"/"+string(newObj.ID), &b)
+			req, err := http.NewRequest(
+				method,
+				server.URL+"/"+string(newObj.ID),
+				&b,
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -250,7 +271,10 @@ func TestHandler_UpdateMissing(t *testing.T) {
 				t.Fatal(err)
 			}
 			if http.StatusNotFound != resp.StatusCode {
-				t.Errorf("expected status code to be %v, got %v", http.StatusNotFound, resp.StatusCode)
+				t.Errorf(
+					"expected status code to be %v, got %v",
+					http.StatusNotFound, resp.StatusCode,
+				)
 			}
 		})
 	}
@@ -270,7 +294,10 @@ func TestHandler_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 	if http.StatusOK != resp.StatusCode {
-		t.Error("expected status code to be %v, got %v", http.StatusOK, resp.StatusCode)
+		t.Error(
+			"expected status code to be %v, got %v",
+			http.StatusOK, resp.StatusCode,
+		)
 	}
 }
 
@@ -287,6 +314,9 @@ func TestHandler_DeleteMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if http.StatusNotFound != resp.StatusCode {
-		t.Error("expected status code to be %v, got %v", http.StatusNotFound, resp.StatusCode)
+		t.Error(
+			"expected status code to be %v, got %v",
+			http.StatusNotFound, resp.StatusCode,
+		)
 	}
 }

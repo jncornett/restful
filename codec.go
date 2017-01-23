@@ -11,7 +11,8 @@ type Codec interface {
 	Decode(r io.Reader, v interface{}) error
 }
 
-// ClientCodec is an interface that extends the Codec interface with a GetBodyType method.
+// ClientCodec is an interface that extends the Codec interface with a
+// GetBodyType method.
 type ClientCodec interface {
 	Codec
 	GetBodyType() string
