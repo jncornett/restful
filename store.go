@@ -17,6 +17,8 @@ func (e ErrMissing) Error() string {
 type ID string
 
 // Store presents an interface to a data store.
+// NOTE GetAll() should return a non-nil value even when there are no records
+// returned.
 type Store interface {
 	Put(interface{}) (interface{}, error)
 	Update(ID, interface{}) error
